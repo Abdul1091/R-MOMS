@@ -1,7 +1,7 @@
 from app.utils.validators import validate_password, validate_email_address, ValidationError
 from app.models.user import User
 from flask_jwt_extended import create_access_token, create_refresh_token
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 
 class AuthService:

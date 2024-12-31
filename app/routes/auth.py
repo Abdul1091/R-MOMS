@@ -86,6 +86,7 @@ def reset_password():
 @auth_bp.route('/change-password', methods=['POST'])
 @jwt_required()
 def change_password():
+    from app.models.user import User
     data = request.get_json()
     user_id = get_jwt_identity()
     user = User.query.get(user_id)

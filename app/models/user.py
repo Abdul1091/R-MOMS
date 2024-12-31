@@ -1,5 +1,6 @@
 from app import db, bcrypt
-from app.models.base import BaseModel
+from app.models.base import BaseModel, ModelValidationError
+from app.utils.validators import validate_email_address, ValidationError
 
 class Role(BaseModel):
     __tablename__ = 'roles'
@@ -40,6 +41,21 @@ class User(BaseModel):
 
     def verify_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+    
+    def validate(self):
+        if not self.username or len(self.username) < 3:
+            raise ModelValidationError("Username must be at least 3 characters long")
+            
+        if not self.email:
+            raise ModelValidationError("Email is required")
+            
+        try:
+            validate_email_address(self.email)
+        except ValidationError as e:
+            raise ModelValidationError(str(e))
+            
+        if not self.password_hash:
+            raise ModelValidationError("Password is required")
 
     def to_dict(self):
         return {
