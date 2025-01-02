@@ -7,6 +7,10 @@ const Register = () => {
         username: '',
         email: '',
         password: '',
+        first_name: '',
+        last_name: '',
+        department_id: '',
+        role_id: '',
     });
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -38,6 +42,7 @@ const Register = () => {
                 placeholder="Username"
                 value={formData.username}
                 onChange={handleChange}
+                required
             />
             <input
                 type="email"
@@ -45,12 +50,44 @@ const Register = () => {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
+                required
             />
             <input
                 type="password"
                 name="password"
                 placeholder="Password"
                 value={formData.password}
+                onChange={handleChange}
+                required
+            />
+            <input
+                type="text"
+                name="first_name"
+                placeholder="First Name"
+                value={formData.first_name}
+                onChange={handleChange}
+                required
+            />
+            <input
+                type="text"
+                name="last_name"
+                placeholder="Last Name"
+                value={formData.last_name}
+                onChange={handleChange}
+                required
+            />
+            <input
+                type="number"
+                name="department_id"
+                placeholder="Department ID"
+                value={formData.department_id}
+                onChange={handleChange}
+            />
+            <input
+                type="number"
+                name="role_id"
+                placeholder="Role ID"
+                value={formData.role_id}
                 onChange={handleChange}
             />
             <button type="submit">Register</button>

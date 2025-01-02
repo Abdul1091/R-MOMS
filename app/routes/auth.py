@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.auth import AuthService
 from app.utils.security import role_required
 from app.utils.validators import ValidationError, validate_password
+from app.utils.email import send_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -11,6 +12,12 @@ def register():
     try:
         data = request.get_json()
         user = AuthService.register_user(data)
+        
+        # Send a welcome email
+        subject = "Welcome to Our Platform!"
+        body = "Thank you for signing up. We're excited to have you!"
+        send_email(subject, [user.email], body)
+        
         return jsonify({
             'message': 'User registered successfully',
             'user': user.to_dict()
@@ -54,18 +61,32 @@ def get_current_user():
 def reset_password_request():
     data = request.get_json()
     email = data.get('email')
-    
+
     if not email:
         return jsonify({'error': 'Email is required'}), 400
-        
-    token = AuthService.reset_password_request(email)
-    if token:
-        # In production, send email instead of returning token
-        return jsonify({
-            'message': 'Password reset instructions sent',
-            'token': token  # Remove this in production
-        }), 200
-    return jsonify({'error': 'Email not found'}), 404
+
+    try:
+        # Generate password reset token
+        token = AuthService.reset_password_request(email)
+
+        if token:
+            # Prepare email content
+            subject = "Password Reset Request"
+            body = (
+                f"We received a request to reset your password. If this was you, please use the link below to reset your password.\n\n"
+                f"Reset Link: https://your-domain.com/reset-password?token={token}\n\n"
+                "If you did not request a password reset, please ignore this email."
+            )
+
+            # Send email notification
+            send_email(subject, [email], body)
+
+            return jsonify({
+                'message': 'Password reset instructions sent. Please check your email.'
+            }), 200
+        return jsonify({'error': 'Email not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @auth_bp.route('/reset-password', methods=['POST'])
 def reset_password():
@@ -107,6 +128,12 @@ def change_password():
         validate_password(new_password)
         user.password = new_password
         user.save()
+        
+        # Send email notification
+        subject = "Password Changed Successfully"
+        body = "Your password has been changed successfully. If you did not make this change, please contact support immediately."
+        send_email(subject, [user.email], body)
+        
         return jsonify({'message': 'Password changed successfully'}), 200
     except ValidationError as e:
         return jsonify({'error': str(e)}), 400
