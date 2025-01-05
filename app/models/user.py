@@ -66,5 +66,9 @@ class User(BaseModel):
             'last_name': self.last_name,
             'department': self.department.name if self.department else None,
             'role': self.role.name if self.role else None,
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'created_by': self.created_by,
+            'updated_by': self.updated_by,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
         }
