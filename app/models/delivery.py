@@ -1,10 +1,9 @@
 from app import db
-from datetime import datetime
+from app.models.base import BaseModel
 
-class Delivery(db.Model):
+class Delivery(BaseModel):
     __tablename__ = 'deliveries'
 
-    id = db.Column(db.Integer, primary_key=True)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
     supplier = db.relationship('Supplier', backref=db.backref('deliveries', lazy=True))
 
@@ -20,7 +19,6 @@ class Delivery(db.Model):
     truck_no = db.Column(db.String(255), nullable=False)  # Truck number
     driver_nm = db.Column(db.String(255), nullable=False)  # Driver name
     driver_no = db.Column(db.String(255), nullable=False)  # Driver phone number
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Additional methods for calculations
     def calculate_net_wgt(self):
@@ -40,3 +38,6 @@ class Delivery(db.Model):
         self.calculate_total_value()
         db.session.add(self)
         db.session.commit()
+
+        # Call BaseModel's save method for timestamps and user tracking
+        super().save()
