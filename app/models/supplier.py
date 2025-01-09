@@ -1,14 +1,14 @@
 from app import db
 from datetime import datetime
 from sqlalchemy.orm import validates
+from app.models.base import BaseModel
 import logging
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-class Supplier(db.Model):
+class Supplier(BaseModel):
     __tablename__ = 'suppliers'
-    id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String(100), nullable=False)
     cac_number = db.Column(db.String(50), nullable=False)
     phone_no = db.Column(db.String(15), nullable=False)
@@ -33,17 +33,15 @@ class Supplier(db.Model):
             raise ValueError('Phone number must contain only digits')
         return phone_no
 
-class MoisturePricing(db.Model):
+class MoisturePricing(BaseModel):
     __tablename__ = 'moisture_pricing'
-    id = db.Column(db.Integer, primary_key=True)
     moisture_a = db.Column(db.Float, nullable=False)
     moisture_b = db.Column(db.Float, nullable=False)
     moisture_c = db.Column(db.Float, nullable=False)
     moisture_a_price = db.Column(db.Float, nullable=False)
     moisture_b_price = db.Column(db.Float, nullable=False)
     moisture_c_price = db.Column(db.Float, nullable=False)
-    updated_by = db.Column(db.String(80), nullable=False)  # Username of the user who updated it
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
 
     def update_prices(self, a_price, b_price, c_price, updated_by):
         self.moisture_a_price = a_price
@@ -52,9 +50,8 @@ class MoisturePricing(db.Model):
         self.updated_by = updated_by
         self.updated_at = datetime.utcnow()
 
-class BankDetails(db.Model):
+class BankDetails(BaseModel):
     __tablename__ = 'bank_details'
-    id = db.Column(db.Integer, primary_key=True)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
     bank_name = db.Column(db.String(100), nullable=False)
     account_name = db.Column(db.String(100), nullable=False)
@@ -62,9 +59,8 @@ class BankDetails(db.Model):
     sort_code = db.Column(db.String(10), nullable=True)
     bank_branch = db.Column(db.String(100), nullable=True)
 
-class Wallet(db.Model):
+class Wallet(BaseModel):
     __tablename__ = 'wallets'
-    id = db.Column(db.Integer, primary_key=True)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False, unique=True)
     balance = db.Column(db.Float, default=0.0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
@@ -75,13 +71,3 @@ class Wallet(db.Model):
             raise ValueError("Insufficient balance")
         self.balance += amount
         self.last_updated = datetime.utcnow()
-
-# Example utility function to handle common operations
-def save_to_db(instance):
-    try:
-        db.session.add(instance)
-        db.session.commit()
-    except Exception as e:
-        logger.error(f"Error saving {instance.__class__.__name__} to database: {e}")
-        db.session.rollback()
-        raise
