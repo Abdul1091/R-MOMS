@@ -1,3 +1,6 @@
+#!/user/bin/env python3
+
+
 from flask import jsonify
 from app.models.base import ModelValidationError
 from app.utils.validators import ValidationError
