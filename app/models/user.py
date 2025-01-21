@@ -1,3 +1,5 @@
+#!/user/bin/env python3
+
 from app import db, bcrypt
 from app.models.base import BaseModel, ModelValidationError
 from app.utils.validators import validate_email_address, ValidationError
@@ -5,7 +7,6 @@ from app.utils.validators import validate_email_address, ValidationError
 class Role(BaseModel):
     __tablename__ = 'roles'
 
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     description = db.Column(db.Text)
     users = db.relationship('User', backref='role', lazy=True)
@@ -13,7 +14,6 @@ class Role(BaseModel):
 class Department(BaseModel):
     __tablename__ = 'departments'
 
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
     users = db.relationship('User', backref='department', lazy=True)
@@ -21,12 +21,12 @@ class Department(BaseModel):
 class User(BaseModel):
     __tablename__ = 'users'
 
-    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
+    profile_picture = db.Column(db.String(200), nullable=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     is_active = db.Column(db.Boolean, default=True)
@@ -64,6 +64,7 @@ class User(BaseModel):
             'email': self.email,
             'first_name': self.first_name,
             'last_name': self.last_name,
+            'profile_picture': self.profile_picture,
             'department': self.department.name if self.department else None,
             'role': self.role.name if self.role else None,
             'is_active': self.is_active,

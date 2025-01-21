@@ -1,7 +1,9 @@
-from app import db
-from models.base import BaseModel
+#!/user/bin/env python3
 
-class QualityCheck(db.Model, BaseModel):
+from app import db
+from app.models.base import BaseModel
+
+class QualityCheck(BaseModel):
     __tablename__ = 'quality_checks'
     delivery_id = db.Column(db.Integer, db.ForeignKey('deliveries.id'), nullable=False)
     moisture_content = db.Column(db.Float, nullable=True)

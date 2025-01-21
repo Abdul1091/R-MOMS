@@ -1,3 +1,5 @@
+#!/user/bin/env python3
+
 from app import db
 from app.models.base import BaseModel
 
@@ -7,18 +9,21 @@ class Delivery(BaseModel):
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
     supplier = db.relationship('Supplier', backref=db.backref('deliveries', lazy=True))
 
-    wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=True)  # Foreign key to Wallet
-    wallet = db.relationship('Wallet', backref='deliveries')  # Relationship to Wallet
+    wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=True)
+    wallet = db.relationship('Wallet', backref='deliveries')
 
+    goods_type = db.Column(db.String(100), nullable=True)
     quantity = db.Column(db.String(255), nullable=False)
-    gross_wgt = db.Column(db.Integer, nullable=False)  # Gross weight in kg
-    tar_wgt = db.Column(db.Integer, nullable=False)  # Tare weight in kg
-    net_wgt = db.Column(db.Integer, nullable=False)  # Net weight calculated
-    price_per_kg = db.Column(db.Integer, nullable=False)  # Price per kg
-    total_value = db.Column(db.Integer, nullable=False)  # Total value calculated
-    truck_no = db.Column(db.String(255), nullable=False)  # Truck number
-    driver_nm = db.Column(db.String(255), nullable=False)  # Driver name
-    driver_no = db.Column(db.String(255), nullable=False)  # Driver phone number
+    quantity_received = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(50), nullable=True, default='Pending')
+    gross_wgt = db.Column(db.Integer, nullable=False)
+    tar_wgt = db.Column(db.Integer, nullable=False)
+    net_wgt = db.Column(db.Integer, nullable=False)
+    price_per_kg = db.Column(db.Integer, nullable=False)
+    total_value = db.Column(db.Integer, nullable=False)
+    truck_no = db.Column(db.String(255), nullable=False)
+    driver_nm = db.Column(db.String(255), nullable=False)
+    driver_no = db.Column(db.String(255), nullable=False)
 
     # Additional methods for calculations
     def calculate_net_wgt(self):
