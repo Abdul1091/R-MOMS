@@ -1,3 +1,6 @@
+#!/user/bin/env python3
+
+
 from app.utils.validators import validate_password, validate_email_address, ValidationError
 from app.models.user import User
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -45,18 +48,34 @@ class AuthService:
 
     @staticmethod
     def reset_password_request(email):
+    # Fetch the user based on the email
         user = User.query.filter_by(email=email).first()
         if not user:
             return None
 
+        # Generate the password reset token
         token = generate_reset_token(user)
-        reset_link = f"http://frontend-url/reset-password?token={token}"
+        reset_link = f"http://localhost:3001/reset-password?token={token}"
 
+        # Log token generation for debugging
+        import logging
+        logging.basicConfig(level=logging.DEBUG)
+        logging.debug(f"Generated reset token for {email}: {token}")
+
+        # Send the reset link to the user's email
         send_email(
             subject="Reset Your Password",
             recipients=[email],
-            body=f"Click the link to reset your password: {reset_link}\nThis link will expire in 1 hour."
+            body = (
+                f"We received a request to reset your password. If this was you, please use the link below to reset your password.\n\n"
+                f"Click the link to reset your password: {reset_link}\nThis link will expire in 1 hour."
+                f"If you did not request a password reset, please ignore this email."
+            )
         )
+
+        # Return the token
+        return token
+
 
     @staticmethod
     def reset_password(token, new_password):
