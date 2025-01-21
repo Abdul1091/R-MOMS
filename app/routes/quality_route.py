@@ -1,3 +1,5 @@
+#!/user/bin/env python3
+
 from flask import Blueprint, jsonify, request
 from app.schema.quality_schema import QualityCheckSchema
 from marshmallow.exceptions import ValidationError
@@ -97,6 +99,15 @@ def quality_checks_list():
         logger.error(f"Error fetching quality checks list: {str(e)}")
         return jsonify({'error': 'An error occurred while fetching quality checks list'}), 500
 
+@quality_control_bp.route('/list_deliveries', methods=['GET'])
+def list_deliveries():
+    try:
+        deliveries = Delivery.query.all()
+        return jsonify([delivery.to_dict() for delivery in deliveries]), 200
+    except Exception as e:
+        logger.error(f"Error fetching deliveries: {str(e)}")
+        return jsonify({'error': 'An error occurred while fetching deliveries'}), 500
+
 @quality_control_bp.route('/quality_check/<int:delivery_id>', methods=['POST'])
 def quality_check(delivery_id):
     try:
@@ -107,23 +118,15 @@ def quality_check(delivery_id):
         moisture_pricing = MoisturePricing.query.first()
 
         if not moisture_pricing:
-            logger.warning("Moisture pricing not set")
             return jsonify({'error': 'Moisture pricing is not set by procurement'}), 400
 
         if quality_check and quality_check.is_locked:
-            logger.warning(f"Quality check locked for delivery ID: {delivery_id}")
             return jsonify({'error': 'Quality check already finalized and cannot be edited'}), 400
 
-        data = request.json
-
         # Validate input using Marshmallow
-        try:
-            validated_data = quality_check_schema.load(data)
-        except ValidationError as err:
-            logger.error(f"Validation error: {err.messages}")
-            return jsonify({'error': 'Invalid input', 'details': err.messages}), 400
+        validated_data = quality_check_schema.load(request.json)
 
-        # Update or create quality check
+        # Update quality check
         if not quality_check:
             quality_check = QualityCheck(delivery_id=delivery_id)
 
@@ -131,18 +134,31 @@ def quality_check(delivery_id):
             setattr(quality_check, field, value)
 
         quality_check.rejected_bags = quality_check.total_bags - quality_check.accepted_bags
-        delivery.price_per_kg = determine_price(validated_data, moisture_pricing)
-        delivery.total_value = delivery.net_wgt * delivery.price_per_kg
+        price_per_kg = determine_price(validated_data, moisture_pricing)
+
+        if price_per_kg == 0.0:
+            return jsonify({'error': 'Invalid moisture content provided'}), 400
+
+        delivery.price_per_kg = price_per_kg
+        delivery.total_value = delivery.net_wgt * price_per_kg
         quality_check.is_locked = True
 
-        quality_check.save()
-        
+        # Save both records
+        try:
+            db.session.add(delivery)
+            db.session.add(quality_check)
+            db.session.commit()
+            return jsonify({'message': 'Quality check updated successfully'}), 200
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Database error: {e}")
+            return jsonify({'error': 'Database error occurred'}), 500
 
-        logger.info(f"Quality check updated for delivery ID: {delivery_id}")
-        return jsonify({'message': 'Quality check updated successfully'}), 200
-
+    except ValidationError as err:
+        return jsonify({'error': 'Invalid input', 'details': err.messages}), 400
     except Exception as e:
         logger.error(f"Error updating quality check for delivery ID {delivery_id}: {str(e)}")
+        db.session.rollback()
         return jsonify({'error': 'An error occurred while updating quality check'}), 500
 
 

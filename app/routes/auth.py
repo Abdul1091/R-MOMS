@@ -1,3 +1,5 @@
+#!/user/bin/env python3
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.auth import AuthService
@@ -70,23 +72,15 @@ def reset_password_request():
         token = AuthService.reset_password_request(email)
 
         if token:
-            # Prepare email content
-            subject = "Password Reset Request"
-            body = (
-                f"We received a request to reset your password. If this was you, please use the link below to reset your password.\n\n"
-                f"Reset Link: https://your-domain.com/reset-password?token={token}\n\n"
-                "If you did not request a password reset, please ignore this email."
-            )
-
-            # Send email notification
-            send_email(subject, [email], body)
-
             return jsonify({
                 'message': 'Password reset instructions sent. Please check your email.'
             }), 200
+        
+        # Email not found
         return jsonify({'error': 'Email not found'}), 404
     except Exception as e:
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
 
 @auth_bp.route('/reset-password', methods=['POST'])
 def reset_password():

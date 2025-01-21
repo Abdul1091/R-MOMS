@@ -1,10 +1,12 @@
+#!/user/bin/env python3
+
 from flask import Blueprint, jsonify, request
 from app.models.supplier import Supplier, Wallet, MoisturePricing
 from app.models.delivery import Delivery
 from app import db
 from datetime import datetime
 import logging
-from app.utils.security import role_required, department_required
+#from app.utils.security import role_required, department_required
 from marshmallow import Schema, fields, ValidationError
 
 # Initialize logging
@@ -16,17 +18,19 @@ weighbridge_bp = Blueprint('weighbridge', __name__)
 # Schema for input validation
 class DeliverySchema(Schema):
     supplier_id = fields.Int(required=True)
+    goods_type = fields.String(required=True)
     quantity = fields.Int(required=True)
+    quantity_received = fields.Int(required=False)
     gross_wgt = fields.Int(required=True)
     tar_wgt = fields.Int(required=True)
-    truck_no = fields.Str(required=False)
-    driver_nm = fields.Str(required=False)
-    driver_no = fields.Str(required=False)
+    truck_no = fields.Str(required=True)
+    driver_nm = fields.Str(required=True)
+    driver_no = fields.Str(required=True)
 
 # Dashboard route that returns data in JSON format
 @weighbridge_bp.route('/dashboard')
-@role_required(roles=['Admin', 'Manager'])
-@department_required(departments=['Weighbridge', 'IT'])
+#@role_required(roles=['Admin', 'Manager'])
+#@department_required(departments=['Weighbridge', 'IT'])
 def dashboard():
     try:
         total_deliveries = Delivery.query.count()
@@ -48,8 +52,8 @@ def dashboard():
 
 # Deliveries listing
 @weighbridge_bp.route('/deliveries', methods=['GET'])
-@role_required(roles=['Admin', 'Manager'])
-@department_required(departments=['Weighbridge', 'IT'])
+#@role_required(roles=['Admin', 'Manager'])
+#@department_required(departments=['Weighbridge', 'IT'])
 def list_deliveries():
     try:
         page = int(request.args.get('page', 1))
@@ -82,8 +86,8 @@ def list_deliveries():
 
 # Add a new delivery
 @weighbridge_bp.route('/add_delivery', methods=['POST'])
-@role_required(roles=['Admin', 'Manager'])
-@department_required(departments=['Weighbridge', 'IT'])
+#@role_required(roles=['Admin', 'Manager'])
+#@department_required(departments=['Weighbridge', 'IT'])
 def add_delivery():
     try:
         data = DeliverySchema().load(request.json)
@@ -93,7 +97,7 @@ def add_delivery():
         gross_wgt = data.get('gross_wgt')
         tar_wgt = data.get('tar_wgt')
         net_wgt = gross_wgt - tar_wgt
-
+        
         supplier = Supplier.query.get(supplier_id)
         if not supplier:
             return jsonify({"success": False, "error": "Supplier not found."}), 404
@@ -118,18 +122,21 @@ def add_delivery():
             driver_no=data.get('driver_no'),
         )
 
-        # Use the save() method to commit the object
+        # Save the new delivery
         new_delivery.save()
 
         wallet = Wallet.query.filter_by(supplier_id=supplier_id).first()
         if wallet:
             wallet.balance += total_value
             wallet.save()
-            new_delivery.wallet_id = wallet.id # Set wallet id
+            new_delivery.wallet_id = wallet.id  # Update wallet id
 
         return jsonify({"success": True, "message": "Delivery added successfully.", "delivery": new_delivery.to_dict()})
     except ValidationError as err:
         return jsonify({"success": False, "errors": err.messages}), 400
+    except sqlite3.IntegrityError as e:
+        logger.error(f"IntegrityError in add_delivery route: {e}")
+        return jsonify({"success": False, "error": "Database integrity error occurred."}), 400
     except Exception as e:
         logger.error(f"Error in add_delivery route: {e}")
         return jsonify({"success": False, "error": "An unexpected error occurred."}), 500

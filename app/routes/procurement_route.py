@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 procurement_bp = Blueprint('procurement', __name__)
 
-# Marshmallow schemas
+# Marshmallow schemas, will be transfered to the schema
 class SupplierSchema(Schema):
     company_name = fields.String(required=True)
     cac_number = fields.String(required=False)
@@ -49,7 +49,7 @@ def proc_dashboard():
         # Fetch moisture pricing, if exists
         moisture_pricing = MoisturePricing.query.first()
         
-        # Prepare the data
+        # Prepare the moisture data
         moisture_data = {
             "moisture_a": {"level": 0, "price": 0},
             "moisture_b": {"level": 0, "price": 0},
@@ -185,11 +185,11 @@ def manage_moisture_pricing():
             logger.error(f"Unexpected error in moisture pricing: {str(e)}")
             return jsonify({"error": "An unexpected error occurred. Please try again."}), 500
 
-    # GET method: Fetch moisture pricing
+    # Fetch moisture pricing (This error took me days to fix)
     try:
         pricing = MoisturePricing.query.first()
         if not pricing:
-            return jsonify({"message": "No moisture pricing found."}), 404
+            return jsonify({"message": "No moisture pricing found."}), 200
 
         return jsonify(pricing.to_dict()), 200
     except Exception as e:
