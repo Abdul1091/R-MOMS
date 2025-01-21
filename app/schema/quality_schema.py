@@ -1,3 +1,6 @@
+#!/user/bin/env python3
+
+
 from marshmallow import Schema, fields, validates, ValidationError
 
 class QualityCheckSchema(Schema):
